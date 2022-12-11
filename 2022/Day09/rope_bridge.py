@@ -1,65 +1,86 @@
 #!/usr/bin/env python3
 
-HEAD_PATH = [(0, 0)]
-TAIL_PATH = [(0, 0)]
+
+class RopeKnot(object):
+    def __init__(self):
+        self.path = [(0, 0)]
+        self.nknot = None
+
+    def assign_next_knot(self, knot):
+        self.nknot = knot
+
+    def location(self):
+        return self.path[-1]
+
+    def move(self, x, y):
+        location = self.location()
+        new_x = location[0] + x
+        new_y = location[1] + y
+        self.path.append((new_x, new_y))
+
+        if self.nknot:
+            nknot_loc = self.nknot.location()
+            nknot_x = nknot_loc[0]
+            nknot_y = nknot_loc[1]
+            if abs(new_x - nknot_x) >= 2 or abs(new_y - nknot_y) >= 2:
+                nknot_move_x = 0
+                nknot_move_y = 0
+                if new_x != nknot_x and new_y != nknot_y:
+                    # move diagaonally
+                    if new_x > nknot_x:
+                        nknot_move_x = 1
+                    else:
+                        nknot_move_x = -1
+                    if new_y > nknot_y:
+                        nknot_move_y = 1
+                    else:
+                        nknot_move_y = -1
+                elif new_x != nknot_x:
+                    # move horizontally
+                    if new_x > nknot_x:
+                        nknot_move_x = 1
+                    else:
+                        nknot_move_x = -1
+                else:
+                    # move vertically
+                    if new_y > nknot_y:
+                        nknot_move_y = 1
+                    else:
+                        nknot_move_y = -1
+                self.nknot.move(nknot_move_x, nknot_move_y)
+
+    def get_unique_location_count(self):
+        return len(set(self.path))
 
 
-def move(direction, distance):
-    current_head = HEAD_PATH[-1]
-    current_tail = TAIL_PATH[-1]
+def move_knot(knot, direction, distance):
     for _ in range(int(distance)):
-        move_tail = False
         if direction == "U":
-            next_head = (current_head[0] + 1, current_head[1])
-            if next_head[0] - 2 >= current_tail[0]:
-                move_tail = True
+            knot.move(0, 1)
         elif direction == "D":
-            next_head = (current_head[0] - 1, current_head[1])
-            if next_head[0] + 2 <= current_tail[0]:
-                move_tail = True
+            knot.move(0, -1)
         elif direction == "L":
-            next_head = (current_head[0], current_head[1] - 1)
-            if next_head[1] + 2 <= current_tail[1]:
-                move_tail = True
+            knot.move(-1, 0)
         elif direction == "R":
-            next_head = (current_head[0], current_head[1] + 1)
-            if next_head[1] - 2 >= current_tail[1]:
-                move_tail = True
-        current_head = next_head
-        HEAD_PATH.append(current_head)
-        if move_tail:
-            next_tail_x = current_tail[0]
-            next_tail_y = current_tail[1]
-            if current_head[0] != current_tail[0] and current_head[1] != current_tail[1]:
-                # move diagaonally
-                if current_head[0] > current_tail[0]:
-                    next_tail_x += 1
-                else:
-                    next_tail_x -= 1
-                if current_head[1] > current_tail[1]:
-                    next_tail_y += 1
-                else:
-                    next_tail_y -= 1
-            elif current_head[0] != current_tail[0]:
-                # move horizontally
-                if current_head[0] > current_tail[0]:
-                    next_tail_x += 1
-                else:
-                    next_tail_x -= 1
-            else:
-                # move vertically
-                if current_head[1] > current_tail[1]:
-                    next_tail_y += 1
-                else:
-                    next_tail_y -= 1
-            current_tail = (next_tail_x, next_tail_y)
-            TAIL_PATH.append(current_tail)
+            knot.move(1, 0)
+
+
+def build_knot_rope(length):
+    rope = []
+    for i in range(length):
+        rope.append(RopeKnot())
+        if i > 0:
+            rope[i - 1].assign_next_knot(rope[i])
+    return rope
 
 
 if __name__ == "__main__":
+    rope = build_knot_rope(10)
     with open("input.txt", "r") as fp:
         for line in fp.readlines():
-            move(*line.strip().split(" "))
+            move_knot(rope[0], *line.strip().split(" "))
 
-    unique_tail_locations = set(TAIL_PATH)
-    print(f"Part1 Answer: {len(unique_tail_locations)}")
+    knot2_count = rope[1].get_unique_location_count()
+    print(f"Part1 Answer: {knot2_count}")
+    knot10_count = rope[9].get_unique_location_count()
+    print(f"Part2 Answer: {knot10_count}")
