@@ -41,8 +41,10 @@ func getAllMultipliers(memory string) []string {
 }
 
 func getAllDoMemorySegments(memory string) []string {
-    //Splitting on do() and then don't() allows us to keep the first set of each (the do's)
-    //and discard the rest (the dont's)
+    // A regex such as `do\(\).*?(don't\(\)|$)` should handle this but it wasn't and I didn't 
+    // feel like spending more time on it... therefore... behold
+    // Splitting on do() and then don't() allows us to keep the first set of each (the do's)
+    // and discard the rest (the dont's)
     var doMemorySegments []string
     doSplit := "do()"
     segments := strings.Split(memory, doSplit)
@@ -57,12 +59,12 @@ func getAllDoMemorySegments(memory string) []string {
 func main() {
     corruptedMemory := parseInput("./input.txt")
 
-    //Part 1
+    // Part 1
     multipliers := getAllMultipliers(corruptedMemory)
     multiplierTotal := sumAllMultipliers(multipliers)
     fmt.Printf("(Part 1) - Sum of Multipliers: %d\n", multiplierTotal)
 
-    //Part 2
+    // Part 2
     multiplierTotal = 0
     doMemorySegments := getAllDoMemorySegments(corruptedMemory)
     for _, memorySegement := range doMemorySegments {
