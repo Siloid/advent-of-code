@@ -6,6 +6,7 @@ import (
 	"guard"
 	"io"
 	"os"
+	"sync"
 )
 
 func parseInput(path string) ([][]rune, int, int) {
@@ -40,20 +41,47 @@ func parseInput(path string) ([][]rune, int, int) {
     return inputData, startingX, startingY
 }
 
+func makeCopy(original [][]rune) [][]rune {
+    newCopy := make([][]rune, len(original))
+    for i := range original {
+        newCopy[i] = make([]rune, len(original[i]))
+        copy(newCopy[i], original[i])
+    }
+    return newCopy
+}
+
 func findAllInfiniteLoops(floorplan [][]rune, startingX int, startingY int) int {
     infiniteLoopCount := 0
+
+    var guards []*guard.Guard
     for x := range len(floorplan[0]) {
         for y := range len(floorplan) {
             if floorplan[y][x] != '#' && !(x == startingX && y == startingY) {
-                floorplan[y][x] = '#'
-                myGuard := guard.NewGuard(floorplan, startingX, startingY)
-                if myGuard.Patrol() == -1 {
-                    infiniteLoopCount += 1
-                }
-                floorplan[y][x] = '.'
+                updatedFloorplan := makeCopy(floorplan)
+                updatedFloorplan[y][x] = '#'
+                nextGuard := guard.NewGuard(updatedFloorplan, startingX, startingY)
+                guards = append(guards, nextGuard)
             }
         }
     }
+
+    results := make([]int, len(guards))
+    var wg sync.WaitGroup
+    for i, nextGuard := range guards {
+        wg.Add(1)
+        go func(index int, g *guard.Guard) {
+            defer wg.Done()
+            results[index] = g.Patrol()
+        }(i, nextGuard)
+    }
+    wg.Wait()
+
+    for _, value := range results {
+        if value == -1  {
+            infiniteLoopCount += 1
+        }
+    }
+
     return infiniteLoopCount
 }
 

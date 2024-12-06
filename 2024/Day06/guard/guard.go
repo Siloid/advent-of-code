@@ -12,7 +12,7 @@ var DirectionMap = map[int][]int{
     3: []int{-1, 0}, //left
 }
 
-type guard struct {
+type Guard struct {
     floorplan [][]rune
     direction int
     currentX int
@@ -21,14 +21,14 @@ type guard struct {
     visitedLocationsWithDirection []string
 }
 
-func NewGuard(floorplan [][]rune, startingX int, startingY int) *guard {
-    newGuard := guard{floorplan: floorplan, currentX: startingX, currentY: startingY}
+func NewGuard(floorplan [][]rune, startingX int, startingY int) *Guard {
+    newGuard := Guard{floorplan: floorplan, currentX: startingX, currentY: startingY}
     newGuard.direction = 0 //Always starts facing up
     newGuard.visitedLocations = append(newGuard.visitedLocations, strconv.Itoa(startingX) + "," + strconv.Itoa(startingY))
     return &newGuard
 }
 
-func (g *guard) move() int {
+func (g *Guard) move() int {
     // returns 0 if the guard could move
     // returns 1 if not, i.e. edge of map
     // returns -1 if caught walking in a loop
@@ -64,11 +64,11 @@ func (g *guard) move() int {
     return 0
 }
 
-func (g *guard) turn() {
+func (g *Guard) turn() {
     g.direction = (g.direction + 1) % 4
 }
 
-func (g *guard) Patrol() int {
+func (g *Guard) Patrol() int {
     // returns the number of unique rooms visited or -1 if stuck in a loop
     patrolling := true
     for patrolling {
