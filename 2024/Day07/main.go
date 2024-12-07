@@ -29,7 +29,7 @@ func existsPossible(target int, currentValue int, operator rune, numbers []int, 
         if !enableConcatenation {
             return false
         }
-	    currentValueString := strconv.Itoa(currentValue) + strconv.Itoa(nextNumber)
+        currentValueString := strconv.Itoa(currentValue) + strconv.Itoa(nextNumber)
         currentValue, _ = strconv.Atoi(currentValueString)
     }
     if len(numbers) == 0 {
