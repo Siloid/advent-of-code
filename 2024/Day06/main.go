@@ -41,15 +41,6 @@ func parseInput(path string) ([][]rune, int, int) {
     return inputData, startingX, startingY
 }
 
-func makeCopy(original [][]rune) [][]rune {
-    newCopy := make([][]rune, len(original))
-    for i := range original {
-        newCopy[i] = make([]rune, len(original[i]))
-        copy(newCopy[i], original[i])
-    }
-    return newCopy
-}
-
 func findAllInfiniteLoops(floorplan [][]rune, startingX int, startingY int) int {
     infiniteLoopCount := 0
 
@@ -57,9 +48,8 @@ func findAllInfiniteLoops(floorplan [][]rune, startingX int, startingY int) int 
     for x := range len(floorplan[0]) {
         for y := range len(floorplan) {
             if floorplan[y][x] != '#' && !(x == startingX && y == startingY) {
-                updatedFloorplan := makeCopy(floorplan)
-                updatedFloorplan[y][x] = '#'
-                nextGuard := guard.NewGuard(updatedFloorplan, startingX, startingY)
+                nextGuard := guard.NewGuard(floorplan, startingX, startingY)
+                nextGuard.SetExtraObstacle(x, y)
                 guards = append(guards, nextGuard)
             }
         }

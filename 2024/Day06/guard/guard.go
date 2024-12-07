@@ -17,6 +17,8 @@ type Guard struct {
     direction int
     currentX int
     currentY int
+    extraObstacleX int
+    extraObstacleY int
     visitedLocations []string
     visitedLocationsWithDirection []string
 }
@@ -24,8 +26,15 @@ type Guard struct {
 func NewGuard(floorplan [][]rune, startingX int, startingY int) *Guard {
     newGuard := Guard{floorplan: floorplan, currentX: startingX, currentY: startingY}
     newGuard.direction = 0 //Always starts facing up
+    newGuard.extraObstacleX = -1
+    newGuard.extraObstacleY = -1
     newGuard.visitedLocations = append(newGuard.visitedLocations, strconv.Itoa(startingX) + "," + strconv.Itoa(startingY))
     return &newGuard
+}
+
+func (g *Guard) SetExtraObstacle(x int, y int) {
+    g.extraObstacleX = x
+    g.extraObstacleY = y
 }
 
 func (g *Guard) move() int {
@@ -41,6 +50,9 @@ func (g *Guard) move() int {
     }
 
     room := g.floorplan[nextY][nextX]
+    if nextX == g.extraObstacleX && nextY == g.extraObstacleY {
+        room = '#' // handle part2 extra wall
+    }
     switch room {
     case '#':
         g.turn()
@@ -84,4 +96,3 @@ func (g *Guard) Patrol() int {
     }
     return len(g.visitedLocations)
 }
-
