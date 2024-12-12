@@ -7,8 +7,6 @@ import (
 	"os"
 )
 
-
-
 type coordinate struct {
     x int
     y int
@@ -25,7 +23,6 @@ type plot struct {
     perimeter int
     sides int
     fences []fence
-
 }
 
 func createPlot(crop rune) plot {
@@ -79,21 +76,6 @@ func (p *plot) addSection(gardenData [][]rune, location coordinate) {
     p.computeSides()
 }
 
-func areConnectedFences(fenceA fence, fenceB fence) bool {
-    if fenceA.direction == fenceB.direction {
-        adjacentLocations := []coordinate{{fenceA.location.x - 1, fenceA.location.y}, 
-                                          {fenceA.location.x + 1, fenceA.location.y}, 
-                                          {fenceA.location.x, fenceA.location.y - 1}, 
-                                          {fenceA.location.x, fenceA.location.y + 1}}
-        for _, location := range adjacentLocations {
-            if location.x == fenceB.location.x && location.y == fenceB.location.y {
-                return true
-            }
-        }
-    }
-    return false
-}
-
 func readInput(path string) [][]rune {
     var gardenData [][]rune
     file, _ := os.Open(path)
@@ -117,8 +99,19 @@ func readInput(path string) [][]rune {
     return gardenData
 }
 
-func (p plot) String() string {
-    return fmt.Sprintf("Plot: {crop: %s, a: %d, p: %d, s: %d}\n", string(p.crop), p.area, p.perimeter, p.sides)
+func areConnectedFences(fenceA fence, fenceB fence) bool {
+    if fenceA.direction == fenceB.direction {
+        adjacentLocations := []coordinate{{fenceA.location.x - 1, fenceA.location.y},
+                                          {fenceA.location.x + 1, fenceA.location.y},
+                                          {fenceA.location.x, fenceA.location.y - 1},
+                                          {fenceA.location.x, fenceA.location.y + 1}}
+        for _, location := range adjacentLocations {
+            if location.x == fenceB.location.x && location.y == fenceB.location.y {
+                return true
+            }
+        }
+    }
+    return false
 }
 
 func getFenceDirection(locA coordinate, locB coordinate) int {
@@ -130,7 +123,6 @@ func getFenceDirection(locA coordinate, locB coordinate) int {
     if locA.x < locB.x {return 1}
     return 3
 }
-
 
 func getFences(gardenData [][]rune, loc coordinate) []fence {
     var fences []fence
@@ -207,7 +199,7 @@ func main() {
     gardenData := readInput("input.txt")
     plots := createPlots(gardenData)
 
-    // Part1
+    // Part1 and Part2
     totalFenceCost, totalFenceBulkCost := computeFenceCosts(plots)
     fmt.Printf("(Part 1) - Total fence cost: %d\n", totalFenceCost)
     fmt.Printf("(Part 2) - Total fence bulk cost: %d\n", totalFenceBulkCost)
