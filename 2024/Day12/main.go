@@ -8,20 +8,90 @@ import (
 )
 
 
+
+type coordinate struct {
+    x int
+    y int
+}
+
+type fence struct {
+    location coordinate
+    direction int
+}
+
 type plot struct {
     crop rune
     area int
     perimeter int
     sides int
+    fences []fence
+
+}
+
+func createPlot(crop rune) plot {
+    return plot{crop, 0, 0, 0, make([]fence, 0)}
 }
 
 func (p *plot) fenceCost()int {
     return p.area * p.perimeter
 }
 
-type coordinate struct {
-    x int
-    y int
+func (p *plot) fenceBulkCost()int {
+    return p.area * p.sides
+}
+
+func (p *plot) computeSides() {
+    // This is not efficient and is called for every section add
+    // gotta be a better way
+    p.sides = 0
+    maxX, maxY := 0, 0
+    for _, fence := range p.fences {
+        if fence.location.x > maxX {maxX = fence.location.x}
+        if fence.location.y > maxY {maxY = fence.location.y}
+    }
+    var checkedFences []fence
+    for y := 0; y <= maxY; y++ {
+        for x := 0; x <= maxX; x++ {
+            for _, nextFence := range p.fences {
+                if nextFence.location.x == x && nextFence.location.y == y {
+                    areConnected := false
+                    for _, checkedFence := range checkedFences {
+                        if areConnectedFences(nextFence, checkedFence) {
+                            areConnected = true
+                            break
+                        }
+                    }
+                    if !areConnected {
+                        p.sides += 1
+                    }
+                    checkedFences = append(checkedFences, nextFence)
+                }
+            }
+        }
+    }
+}
+
+func (p *plot) addSection(gardenData [][]rune, location coordinate) {
+    newFences := getFences(gardenData, location)
+    p.area += 1
+    p.perimeter += len(newFences)
+    p.fences = append(p.fences, newFences...)
+    p.computeSides()
+}
+
+func areConnectedFences(fenceA fence, fenceB fence) bool {
+    if fenceA.direction == fenceB.direction {
+        adjacentLocations := []coordinate{{fenceA.location.x - 1, fenceA.location.y}, 
+                                          {fenceA.location.x + 1, fenceA.location.y}, 
+                                          {fenceA.location.x, fenceA.location.y - 1}, 
+                                          {fenceA.location.x, fenceA.location.y + 1}}
+        for _, location := range adjacentLocations {
+            if location.x == fenceB.location.x && location.y == fenceB.location.y {
+                return true
+            }
+        }
+    }
+    return false
 }
 
 func readInput(path string) [][]rune {
@@ -48,61 +118,59 @@ func readInput(path string) [][]rune {
 }
 
 func (p plot) String() string {
-    return fmt.Sprintf("Plot: {crop: %s, a: %d, p: %d}\n", string(p.crop), p.area, p.perimeter)
+    return fmt.Sprintf("Plot: {crop: %s, a: %d, p: %d, s: %d}\n", string(p.crop), p.area, p.perimeter, p.sides)
 }
 
-func getPerimeter(gardenData [][]rune, loc coordinate) int {
-    perimeter := 0
-    var adjacentCrops []rune
-    if loc.x > 0 {
-        adjacentCrops = append(adjacentCrops, gardenData[loc.y][loc.x - 1])
-    } else {perimeter += 1}
-    if loc.x + 1 < len(gardenData[0]) {
-        adjacentCrops = append(adjacentCrops, gardenData[loc.y][loc.x + 1])
-    } else {perimeter += 1}
-    if loc.y > 0 {
-        adjacentCrops = append(adjacentCrops, gardenData[loc.y - 1][loc.x])
-    } else {perimeter += 1}
-    if loc.y + 1 < len(gardenData) {
-        adjacentCrops = append(adjacentCrops, gardenData[loc.y + 1][loc.x])
-    } else {perimeter += 1}
-    for _, crop := range adjacentCrops {
-        if crop != gardenData[loc.y][loc.x] {
-            perimeter += 1
+func getFenceDirection(locA coordinate, locB coordinate) int {
+    // 0,1,2,3 -> up, right, down, left
+    if locA.x == locB.x {
+        if locA.y < locB.y {return 2}
+        return 0
+    }
+    if locA.x < locB.x {return 1}
+    return 3
+}
+
+
+func getFences(gardenData [][]rune, loc coordinate) []fence {
+    var fences []fence
+    cardinalCordinates, edgeOfMapCoordinates := getCardinalCoordinates(gardenData, loc)
+    for _, coordinateToCheck := range cardinalCordinates {
+        if gardenData[loc.y][loc.x] != gardenData[coordinateToCheck.y][coordinateToCheck.x] {
+            fences = append(fences, fence{loc, getFenceDirection(loc, coordinateToCheck)})
         }
     }
-    return perimeter
+    for _, edgeCoordinate := range edgeOfMapCoordinates {
+        fences = append(fences, fence{loc, getFenceDirection(loc, edgeCoordinate)})
+    }
+    return fences
 }
 
-func findGardenPlot(crop rune, gardenData [][]rune, plotted [][]int, loc coordinate) (int, int) {
-    if gardenData[loc.y][loc.x] != crop || plotted[loc.y][loc.x] == 1 {
-        return 0, 0
+func getCardinalCoordinates(gardenData [][]rune, loc coordinate) ([]coordinate, []coordinate) {
+    var cardinalCoordinates []coordinate
+    var invalidCoordinates []coordinate
+    coordinates := []coordinate{{loc.x - 1, loc.y}, {loc.x + 1, loc.y}, {loc.x, loc.y - 1}, {loc.x, loc.y + 1}}
+    for _, c := range coordinates {
+        if c.x < 0 || c.x >= len(gardenData[0]) || c.y < 0 || c.y >= len(gardenData) {
+            invalidCoordinates = append(invalidCoordinates, c)
+        } else {
+            cardinalCoordinates = append(cardinalCoordinates, c)
+        }
     }
+    return cardinalCoordinates, invalidCoordinates
+}
+
+func mapGardenPlot(aPlot *plot, gardenData [][]rune, plotted [][]int, loc coordinate) {
+    if plotted[loc.y][loc.x] == 1 {return} // only plot each space once
+    aPlot.addSection(gardenData, loc)
     plotted[loc.y][loc.x] = 1
-    area := 1
-    perimeter := getPerimeter(gardenData, loc)
-    // gotta be a better way to do this...
-    var coordinatesToCheck []coordinate
-    if loc.x > 0 {
-        coordinatesToCheck = append(coordinatesToCheck, coordinate{loc.x - 1, loc.y})
-    }
-    if loc.x + 1 < len(gardenData[0]) {
-        coordinatesToCheck = append(coordinatesToCheck, coordinate{loc.x + 1, loc.y})
 
-    } 
-    if loc.y > 0 {
-        coordinatesToCheck = append(coordinatesToCheck, coordinate{loc.x, loc.y - 1})
-
-    } 
-    if loc.y + 1 < len(gardenData) {
-        coordinatesToCheck = append(coordinatesToCheck, coordinate{loc.x, loc.y + 1})
-    } 
+    coordinatesToCheck, _ := getCardinalCoordinates(gardenData, loc)
     for _, coordinateToCheck := range coordinatesToCheck {
-        additionalArea, additionalPermiter := findGardenPlot(crop, gardenData, plotted, coordinateToCheck)
-        area += additionalArea
-        perimeter += additionalPermiter
+        if aPlot.crop == gardenData[coordinateToCheck.y][coordinateToCheck.x] {
+            mapGardenPlot(aPlot, gardenData, plotted, coordinateToCheck)
+        }
     }
-    return area, perimeter
 }
 
 func createPlots(gardenData [][]rune) []plot {
@@ -116,8 +184,8 @@ func createPlots(gardenData [][]rune) []plot {
     for x := range len(gardenData[0]) {
         for y := range len(gardenData) {
             if plotted[y][x] == 0 {
-                area, perimeter := findGardenPlot(gardenData[y][x], gardenData, plotted, coordinate{x, y})
-                newPlot := plot{gardenData[y][x], area, perimeter, 0}
+                newPlot := createPlot(gardenData[y][x])
+                mapGardenPlot(&newPlot, gardenData, plotted, coordinate{x, y})
                 plots = append(plots, newPlot)
             }
         }
@@ -126,20 +194,21 @@ func createPlots(gardenData [][]rune) []plot {
     return plots
 }
 
-func sumFenceCost(plots []plot) int {
-    total := 0
+func computeFenceCosts(plots []plot) (int, int) {
+    total, totalBulk := 0, 0
     for _, p := range plots {
         total += (p.fenceCost())
+        totalBulk += (p.fenceBulkCost())
     }
-    return total
+    return total, totalBulk
 }
 
 func main() {
     gardenData := readInput("input.txt")
     plots := createPlots(gardenData)
 
-    //fmt.Println(plots)
     // Part1
-    totalFenceCost := sumFenceCost(plots)
+    totalFenceCost, totalFenceBulkCost := computeFenceCosts(plots)
     fmt.Printf("(Part 1) - Total fence cost: %d\n", totalFenceCost)
+    fmt.Printf("(Part 2) - Total fence bulk cost: %d\n", totalFenceBulkCost)
 }
