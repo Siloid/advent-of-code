@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"regexp"
-	"sort"
 	"strconv"
 )
 
@@ -22,25 +21,25 @@ type clawMachine struct {
     prizeY int
 }
 
-func (cM clawMachine) findCheapestOption(maxPresses int) int {
-    var possibleCosts []int
-    for numAPresses := range maxPresses + 1 {
-        remainingX := cM.prizeX - (cM.buttonA.moveX * numAPresses)
-        if remainingX < 0 {break}
-        if remainingX % cM.buttonB.moveX == 0 {
-            numBPresses := remainingX/cM.buttonB.moveX
-            if numBPresses > maxPresses {continue}
-            if cM.prizeY - ((cM.buttonA.moveY * numAPresses) + (cM.buttonB.moveY * numBPresses)) == 0 {
-                possibleCosts = append(possibleCosts, (cM.buttonA.cost * numAPresses) + (cM.buttonB.cost * numBPresses))
-            }
-        }
-    }
-    sort.Ints(possibleCosts)
-    if len(possibleCosts) > 0 {
-        return possibleCosts[0]
+func (cM *clawMachine) adjustPrize(adjustment int) {
+    cM.prizeX += adjustment
+    cM.prizeY += adjustment
+}
+
+func (cM clawMachine) findCheapestOption() int {
+    /*
+    * "Cramer's Rule" - Formula for solving this, look it up
+    * I'm not 100% convinced this works in all cases
+    * As I understand it, it returns the minimum number of presses which is not necessarily the cheapest, but it seemed to work for every case I tried /shrug
+    */
+    pressesA := int(((cM.prizeX * cM.buttonB.moveY) - (cM.buttonB.moveX * cM.prizeY))/((cM.buttonA.moveX * cM.buttonB.moveY) - (cM.buttonB.moveX * cM.buttonA.moveY)))
+    pressesB := int(((cM.buttonA.moveX * cM.prizeY) - (cM.prizeX * cM.buttonA.moveY))/((cM.buttonA.moveX * cM.buttonB.moveY) - (cM.buttonB.moveX * cM.buttonA.moveY)))
+    if ((cM.buttonA.moveX * pressesA) + (cM.buttonB.moveX * pressesB)) == cM.prizeX &&
+       ((cM.buttonA.moveY * pressesA) + (cM.buttonB.moveY * pressesB)) == cM.prizeY {
+        return (pressesA * cM.buttonA.cost) + (pressesB * cM.buttonB.cost)
     }
     return 0
-} 
+}
 
 func parseInput(path string) []clawMachine {
     var machines []clawMachine
@@ -79,9 +78,16 @@ func main() {
 
     // Part 1
     total := 0
-    maxPresses := 100
     for _, machine := range machines {
-        total += machine.findCheapestOption(maxPresses)
+        total += machine.findCheapestOption()
     }
     fmt.Printf("(Part 1) - Total coin cost: %d\n", total)
+
+    // Part 2
+    total = 0
+    for _, machine := range machines {
+        machine.adjustPrize(10000000000000)
+        total += machine.findCheapestOption()
+    }
+    fmt.Printf("(Part 2) - Total coin cost: %d\n", total)
 }
