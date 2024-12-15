@@ -89,19 +89,12 @@ func calculateSafety(robots []robot) int {
 		quadrant := r.getQuadrant()
 		if quadrant == uL {
 			uLCount += 1
-			continue
-		}
-		if quadrant == uR {
+		} else if quadrant == uR {
 			uRCount += 1
-			continue
-		}
-		if quadrant == lL {
+		} else if quadrant == lL {
 			lLCount += 1
-			continue
-		}
-		if quadrant == lR {
+		} else if quadrant == lR {
 			lRCount += 1
-			continue
 		}
 	}
 	return uLCount * uRCount * lLCount * lRCount
