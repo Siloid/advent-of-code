@@ -1,6 +1,7 @@
 package maze
 
 import (
+    "slices"
     "strconv"
 )
 
@@ -111,4 +112,47 @@ func NewMaze(layout [][]rune) Maze {
     }
     newMaze.computeCosts()
     return newMaze
+}
+
+// Here is a bolted on Part2 Solution because Part1 wasn't designed with Part2 in mind... welcome to AoC...
+
+func (r *room) findAllPathsTo(targetCost int, currentCost int, currentPath []*room, fromRoom *room, destRoom *room) (bool, [][]*room) {
+    if currentCost > targetCost || currentCost > r.cost+2000 { // currentCost > r.cost+2000 this is a somewhat arbitrary check that significantly speeds things up
+        return false, nil
+    }
+    currentPath = append(currentPath, r)
+    var allPaths [][]*room
+    if r == destRoom {
+        allPaths = append(allPaths, currentPath)
+        return true, allPaths
+    }
+    for _, nextRoom := range r.neighbors {
+        if nextRoom == fromRoom {
+            continue
+        }
+        newPath := make([]*room, len(currentPath))
+        copy(newPath, currentPath)
+        newCost := currentCost + calculateCost(fromRoom, r, nextRoom)
+        hasPath, newPaths := nextRoom.findAllPathsTo(targetCost, newCost, newPath, r, destRoom)
+        if hasPath {
+            allPaths = append(allPaths, newPaths...)
+        }
+    }
+    if len(allPaths) > 0 {
+        return true, allPaths
+    }
+    return false, nil
+}
+
+func (m *Maze) GetUniqueRoomsInAllPaths() int {
+    _, allPaths := m.layout[m.start].findAllPathsTo(m.layout[m.end].cost, 0, nil, nil, m.layout[m.end])
+    var uniqueRooms []*room
+    for _, p := range allPaths {
+        for _, r := range p {
+            if !slices.Contains(uniqueRooms, r) {
+                uniqueRooms = append(uniqueRooms, r)
+            }
+        }
+    }
+    return len(uniqueRooms)
 }
