@@ -64,35 +64,19 @@ func absDiff(a int, b int) int {
     return c
 }
 
-func isValid2PicoCheat(locA xy, locB xy) bool {
-    xDiff := absDiff(locA.x, locB.x)
-    yDiff := absDiff(locA.y, locB.y)
-    if locA.y == locB.y && xDiff == 2 {
-        return true
-    }
-    if locA.x == locB.x && yDiff == 2 {
-        return true
-    }
-    return false
-}
-
-func isValid20PicoCheat(locA xy, locB xy, minTimeSaved int, savings int) bool {
+func isValidCheat(locA xy, locB xy, cheatTime, minTimeSaved int, savings int) bool {
     totalDiff := absDiff(locA.x, locB.x) + absDiff(locA.y, locB.y)
-    if totalDiff <= 20 && savings - totalDiff >= minTimeSaved {
+    if totalDiff <= cheatTime && savings - totalDiff >= minTimeSaved {
         return true
     }
     return false
 }
 
-func findNumberOfCheats(path []xy, minTimeSaved int, use50Cheat bool) int {
+func findNumberOfCheats(path []xy, minTimeSaved int, cheatTime int) int {
     numCheats := 0
     for i := range len(path) - minTimeSaved {
-        for j := i+minTimeSaved+1; j < len(path); j++ {
-            if use50Cheat {
-                if isValid20PicoCheat(path[i], path[j], minTimeSaved, j-i) {
-                    numCheats += 1
-                }
-            } else if isValid2PicoCheat(path[i], path[j]) {
+        for j := i+minTimeSaved; j < len(path); j++ {
+            if isValidCheat(path[i], path[j], cheatTime, minTimeSaved, j-i) {
                 numCheats += 1
             }
         }
@@ -105,8 +89,8 @@ func main() {
 
     // Part1
     standardPath := getStandardPath(racetrack, start, end)
-    fmt.Printf("(Part 1) - Possible 2 picosecond cheats: %d\n", findNumberOfCheats(standardPath, 100, false))
+    fmt.Printf("(Part 1) - Possible 2 picosecond cheats: %d\n", findNumberOfCheats(standardPath, 100, 2))
 
     // Part2
-    fmt.Printf("(Part 2) - Possible 20 picosecond cheats: %d\n", findNumberOfCheats(standardPath, 100, true))
+    fmt.Printf("(Part 2) - Possible 20 picosecond cheats: %d\n", findNumberOfCheats(standardPath, 100, 20))
 }
