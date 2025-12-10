@@ -28,10 +28,10 @@ def get_tiles_between(tileA, tileB):
     ref_tiles = [tileA, tileB]
     ref_tiles.sort()
     tiles = []
-    for x in range(ref_tiles[0][0], ref_tiles[1][0]+1):
-        for y in range(ref_tiles[0][1], ref_tiles[1][1]+1):
-            if (x,y) not in ref_tiles:
-                tiles.append((x,y))
+    for x in range(ref_tiles[0][0], ref_tiles[1][0] + 1):
+        for y in range(ref_tiles[0][1], ref_tiles[1][1] + 1):
+            if (x, y) not in ref_tiles:
+                tiles.append((x, y))
     return tiles
 
 
@@ -46,12 +46,14 @@ def is_within_perimeter(boundary, perimeter):
 def find_areas(tiles):
     areas = {}
     for index, tileA in enumerate(tiles):
-        for tileB in tiles[index+1:]:
-            x_dist = abs(tileA[0] - tileB[0]) + 1 
+        for tileB in tiles[index + 1 :]:
+            x_dist = abs(tileA[0] - tileB[0]) + 1
             y_dist = abs(tileA[1] - tileB[1]) + 1
             area = x_dist * y_dist
             areas[(tileA, tileB)] = area
-    return {tiles: area for tiles, area in sorted(areas.items(), key=lambda item: item[1], reverse=True)}
+    return {
+        tiles: area for tiles, area in sorted(areas.items(), key=lambda item: item[1], reverse=True)
+    }
 
 
 def find_largest_area_green_red_tiles(areas, perimeter):
@@ -75,7 +77,7 @@ def main():
 
     rg_max_area = find_largest_area_green_red_tiles(areas, perimeter)
     print(f"Part2 - Largest red and green only area: {rg_max_area}")
-    
+
 
 if __name__ == "__main__":
     main()
